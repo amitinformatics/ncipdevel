@@ -122,7 +122,8 @@ RequestedItem
 
             <UserPrivilege>
                 <AgencyUserPrivilegeType>STATUS</AgencyUserPrivilegeType>
-                <ValidToDate>[% user.userdata.dateexpiry_dt.strftime(format_ValidToDate) %]</ValidToDate>
+                <ValidFromDate>[% user.userdata.dateenrolled %]</ValidFromDate>
+                <ValidToDate>[% user.userdata.dateexpiry %]</ValidToDate>              
                 <UserPrivilegeStatus>
                     [%- FILTER collapse -%]
                         <UserPrivilegeStatusType>[%- FILTER collapse -%]

@@ -1,3 +1,13 @@
+<ResponseHeader>
+    <FromSystemId Scheme="" />
+    <FromAgencyId>
+        <AgencyId Scheme="">[% user.userdata.branchcode %]</AgencyId>
+    </FromAgencyId>
+    <ToSystemId Scheme="" />
+    <ToAgencyId>
+        <AgencyId Scheme="">[% user.userdata.branchcode %]</AgencyId>
+    </ToAgencyId>
+</ResponseHeader>
 [%- SET format_ValidToDate = config.format_ValidToDate || '%Y-%m-%d' -%]
 <UserId>
     [%- SWITCH config.lookup_user_id -%]
@@ -30,6 +40,7 @@ RequestedItem
                     </StructuredPersonalUserName>
                 </PersonalNameInformation>
             </NameInformation>
+            <DateOfBirth>1900-01-01</DateOfBirth>
         [%- END -%]
 
         [%- IF element.textContent == 'User Address Information' -%]
@@ -135,4 +146,67 @@ RequestedItem
             <UserIdentifierValue>[% user.userdata.borrowernumber %]</UserIdentifierValue>
         </UserId>
     [%- END -%]
+    <Ext>
+        <UserPhoto>
+        [% user.userdata.image %]
+        </UserPhoto>
+    </Ext>
 </UserOptionalFields>
+<UserFiscalAccount>
+      <AccountBalance>
+        <CurrencyCode Scheme="">INR</CurrencyCode>
+        <MonetaryValue>[% user.userdata.amount %]</MonetaryValue>
+      </AccountBalance>
+    </UserFiscalAccount>
+     <LoanedItemsCount>
+      <CirculationStatus Scheme="">On Loan</CirculationStatus>
+      <LoanedItemCountValue>[% user.userdata.totalloan %]</LoanedItemCountValue>
+      <Ext>
+        <Limit>[% user.userdata.maxissueqty %]</Limit>
+      </Ext>
+    </LoanedItemsCount>
+    <RequestedItemsCount>
+        [% IF (loan.date_due) %]
+        <CirculationStatus Scheme="">On Loan</CirculationStatus>
+        [% ELSE %]
+        <CirculationStatus Scheme="">On Shelf</CirculationStatus>
+        <RequestedItemCountValue>[% user.userdata.reserve %]</RequestedItemCountValue>
+        [% END %]
+    </RequestedItemsCount>
+    [% FOREACH loan IN loans %]
+   <LoanedItem>
+    <ItemId>
+        <AgencyId Scheme="">[% user.userdata.branchcode %]</AgencyId>
+        <ItemIdentifierType Scheme="">Barcode</ItemIdentifierType>
+        <ItemIdentifierValue>[% loan.barcode %]</ItemIdentifierValue>
+    </ItemId>
+    <ReminderLevel />
+    <DateDue>[% loan.date_due %]T23:59:59</DateDue>
+    <Amount>
+       <CurrencyCode>INR</CurrencyCode>
+       [% IF (loan.amountoutstanding) %]
+       <MonetaryValue>[% loan.amountoutstanding %]</MonetaryValue>
+       [% ELSE %]
+       <MonetaryValue>0</MonetaryValue>
+       [% END %]
+    </Amount>
+    <Title>[% loan.title | xml %]</Title>
+    <MediumType Scheme="">[% loan.itype %]</MediumType>
+</LoanedItem>
+[% END %]
+[% FOREACH resr IN resrs %]
+<RequestedItem>
+    <RequestStatusType>In Process</RequestStatusType>
+    <DatePlaced>[% resr.reservedate %]</DatePlaced>
+    <PickupDate>[% resr.reservedate %]</PickupDate>
+    <PickupExpiryDate>[% resr.reservedate %]</PickupExpiryDate>
+    <ReminderLevel />
+    <Title>[% resr.title | xml %]</Title>
+    <MediumType Scheme="">[% resr.itype %]</MediumType>
+    <ItemId>
+        <AgencyId Scheme="">[% resr.homebranch %]</AgencyId>
+        <ItemIdentifierType Scheme="">Barcode</ItemIdentifierType>
+        <ItemIdentifierValue>[% resr.barcode %]</ItemIdentifierValue>
+   </ItemId>
+</RequestedItem>
+[% END %]

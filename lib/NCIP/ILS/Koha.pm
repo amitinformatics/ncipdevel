@@ -20,6 +20,7 @@ use Object::Tiny qw{ name };
 
 use MARC::Record;
 use MARC::Field;
+use MIME::Base64;
 
 use C4::Auth qw{
   checkpw_hash
@@ -120,8 +121,45 @@ sub userdata {
     $patron_hashref->{restricted} = $block_status;
 
     $patron_hashref->{dateexpiry_dt} = dt_from_string( $patron_hashref->{dateexpiry} );
+    
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare(
+            "SELECT sum(round(amountoutstanding,2)) as amountoutstanding
+                FROM accountlines 
+                WHERE borrowernumber=? 
+                    AND amountoutstanding > 0
+                ");
+
+    $sth->execute($patron->borrowernumber);
+    my $data = $sth->fetchrow_hashref;
+
+
+    my $sth_iss = $dbh->prepare("select sum(maxissueqty) as maxissueqty from issuingrules where branchcode = ? and categorycode = ?");
+    $sth_iss->execute($patron->branchcode, $patron->categorycode);
+    my $data_iss = $sth_iss->fetchrow_hashref;
+
+    my $sth_loan = $dbh->prepare("select count(*) as total from issues where borrowernumber = ?");
+    $sth_loan->execute($patron->borrowernumber);
+    my $data_loan = $sth_loan->fetchrow_hashref;
+
+    my $sth_res = $dbh->prepare("select count(*) as total from reserves where borrowernumber = ?");
+    $sth_res->execute($patron->borrowernumber);
+    my $data_res = $sth_res->fetchrow_hashref;
+
+    my $sth_image = $dbh->prepare("select * from patronimage where borrowernumber = ?");
+    $sth_image->execute($patron->borrowernumber);
+    my $dataimage = $sth_image->fetchrow_hashref;
+    my $encoded = encode_base64($dataimage->{'imagefile'});
+
+
+    $patron_hashref->{maxissueqty} =  $data_iss->{'maxissueqty'};
+    $patron_hashref->{totalloan} =  $data_loan->{'total'};
+    $patron_hashref->{amount} =  $data->{'amountoutstanding'};
+    $patron_hashref->{image} = $encoded;
+    $patron_hashref->{reserve} = $data_res->{'total'};
 
     return $patron_hashref;
+    
 }
 
 sub userenv {    #FIXME: This really needs to be in a config file

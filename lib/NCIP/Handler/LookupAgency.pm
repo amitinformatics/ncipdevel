@@ -13,13 +13,11 @@ package NCIP::Handler::LookupAgency;
 
 =cut
 
+
 use Modern::Perl;
 
 use NCIP::Handler;
-use NCIP::Response;
-use C4::Auth qw{
-  checkpw_hash
-};
+use NCIP::User;
 
 our @ISA = qw(NCIP::Handler);
 

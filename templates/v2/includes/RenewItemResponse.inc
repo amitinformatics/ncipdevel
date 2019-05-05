@@ -1,3 +1,13 @@
+<ResponseHeader>
+    <FromSystemId Scheme="" />
+    <FromAgencyId>
+        <AgencyId Scheme="">[% branch %]</AgencyId>
+    </FromAgencyId>
+    <ToSystemId Scheme="" />
+    <ToAgencyId>
+        <AgencyId Scheme="">[% branch %]</AgencyId>
+    </ToAgencyId>
+</ResponseHeader>
 <ItemId>
     <AgencyId>[% from_agency | trim%]</AgencyId>
     <ItemIdentifierType>Barcode Id</ItemIdentifierType>
@@ -8,4 +18,4 @@
     <UserIdentifierType>Barcode Id</UserIdentifierType>
     <UserIdentifierValue>[% userid | xml %]</UserIdentifierValue>
 </UserId>
-<DateDue>[% data.datedue %]</DateDue>
+<DateDue>[% data.datedue %]+05:30</DateDue>

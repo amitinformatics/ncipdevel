@@ -38,6 +38,21 @@ sub handle {
         # check in the item
         my $branch = undef;    # where the hell do we get this from???
         my ( $from, $to ) = $self->get_agencies($xmldoc);
+        
+        my $dbh = C4::Context->dbh;
+        my $sth = $dbh->prepare(
+            "SELECT * FROM items WHERE barcode = ?
+                ");
+
+        $sth->execute($itemid);
+        my $data_br = $sth->fetchrow_hashref;
+
+        my $sthiss = $dbh->prepare(
+            "select cardnumber as cardnumber from borrowers where borrowernumber in (Select borrowernumber from issues where itemnumber in (select itemnumber from items where barcode = ?))");
+
+        $sthiss->execute($itemid);
+        my $data_iss = $sthiss->fetchrow_hashref;
+
 
         my $checkin = $self->ils->checkin(
             {
@@ -57,6 +72,8 @@ sub handle {
                     to_agency    => $from,
                     elements     => $self->get_user_elements($xmldoc),
                     checkin      => $checkin,
+                    branch       => $data_br->{'homebranch'},
+                    cardnumber   => $data_iss->{'cardnumber'},
                 }
             );
         }

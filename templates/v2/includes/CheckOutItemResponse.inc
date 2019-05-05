@@ -1,3 +1,13 @@
+<ResponseHeader>
+    <FromSystemId Scheme="" />
+    <FromAgencyId>
+        <AgencyId Scheme="">[% branch %]</AgencyId>
+    </FromAgencyId>
+    <ToSystemId Scheme="" />
+    <ToAgencyId>
+        <AgencyId Scheme="">[% branch %]</AgencyId>
+    </ToAgencyId>
+</ResponseHeader>
 [%- SET format_DateDue = config.format_DateDue || '%Y-%m-%dT%H:%M:%S' -%]
 <ItemId>
     <AgencyId>[% from_agency | trim%]</AgencyId>
@@ -9,4 +19,4 @@
     <UserIdentifierType>Barcode Id</UserIdentifierType>
     <UserIdentifierValue>[% userid | xml %]</UserIdentifierValue>
 </UserId>
-<DateDue>[% datedue.strftime(format_DateDue) %]</DateDue>
+<DateDue>[% datedue %]+05:30</DateDue>

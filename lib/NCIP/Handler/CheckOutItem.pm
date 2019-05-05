@@ -47,6 +47,13 @@ sub handle {
         my $data = $self->ils->checkout( $userid, $itemid, $date_due );
 
         my ( $from, $to ) = $self->get_agencies($xmldoc);
+        my $dbh = C4::Context->dbh;
+        my $sth = $dbh->prepare(
+            "SELECT * FROM items WHERE barcode = ?
+                ");
+
+        $sth->execute($itemid);
+        my $data_br = $sth->fetchrow_hashref;
 
         if ( $data->{success} ) {
             my $elements = $self->get_user_elements($xmldoc);
@@ -61,6 +68,7 @@ sub handle {
                     elements     => $elements,
                     datedue      => $data->{date_due},
                     config       => $config,
+                    branch       => $data_br->{'homebranch'},
                 }
             );
         }

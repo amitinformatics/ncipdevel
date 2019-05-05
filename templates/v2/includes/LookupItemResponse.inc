@@ -1,29 +1,45 @@
+<ResponseHeader>
+    <FromSystemId Scheme="" />
+    <FromAgencyId>
+        <AgencyId Scheme="">[% branch %]</AgencyId>
+    </FromAgencyId>
+    <ToSystemId Scheme="" />
+    <ToAgencyId>
+        <AgencyId Scheme="">[% branch %]</AgencyId>
+    </ToAgencyId>
+</ResponseHeader>
 <ItemId>
+    <AgencyId Scheme="">[% branch %]</AgencyId>
+    <ItemIdentifierType Scheme="">Barcode</ItemIdentifierType>        
     <ItemIdentifierValue>[% item.barcode | xml %]</ItemIdentifierValue>
 </ItemId>
-<UserOptionalFields>
+[% IF element.textContent == 'Hold Queue Length' %]
+<DateRecalled>1900-01-01T00:00:00</DateRecalled>
+<HoldPickupDate>[% waitingdate %]T00:00:00</HoldPickupDate>
+[% END %]
+<ItemOptionalFields>
     [% FOREACH element IN elements %]
         [% IF element.textContent == 'Bibliographic Description' %]
             <BibliographicDescription>
-                <Author>[% item.biblio.author %]</Author>
+                <Author>[% item.biblio.author |xml %]</Author>
 
                 <BibliographicItemId>
                     <BibliographicItemIdentifier>[% item.biblio.isbn %]</BibliographicItemIdentifier>
-                    <BibliographicItemIdentifierCode>ISBN</BibliographicItemIdentifierCode>
+                    <BibliographicItemIdentifierCode Scheme="">ISBN</BibliographicItemIdentifierCode>
                 </BibliographicItemId>
 
                 <BibliographicRecordId>
                     <BibliographicRecordIdentifier>[% item.biblio.lccn %]</BibliographicRecordIdentifier>
-                    <BibliographicRecordIdentifierCode>LCCN</BibliographicRecordIdentifierCode>
+                    <BibliographicRecordIdentifierCode Scheme="">LCCN</BibliographicRecordIdentifierCode>
                 </BibliographicRecordId>
 
-                <Edition>[% item.biblio.editionstatement %]</Edition>
-                <PlaceOfPublication>[% item.biblio.place %]</PlaceOfPublication>
+                <Edition>[% item.biblio.editionstatement  |xml %]</Edition>
+                <PlaceOfPublication>[% item.biblio.place |xml %]</PlaceOfPublication>
                 <PublicationDate>[% item.biblio.copyrightdate %]</PublicationDate>
-                <Publisher>[% item.biblio.publishercode %]</Publisher>
-                <Title>[% item.biblio.title %]</Title>
+                <Publisher>[% item.biblio.publishercode |xml %]</Publisher>
+                <Title>[% item.biblio.title |xml %]</Title>
                 [%- FILTER collapse -%]
-                    <BibliographicLevel>
+                    <BibliographicLevel Scheme="">
                         [%- FILTER trim -%]
                             [%- SWITCH item.record.leader.substr(7, 1) -%]
                             [%- CASE 'a' -%]
@@ -46,71 +62,77 @@
                 [%- END -%]
                 <Language>[% item.record.field('008').data.substr(35,3) %]</Language>
                 [%- FILTER collapse -%]
-                    <MediumType>
-                        [%- FILTER trim -%]
-                            [%- SWITCH item.itemtype.sip_media_type -%]
-                            [%- CASE '004' -%]
-                                Audio tape
-                            [%- CASE '001' -%]
-                                Book
-                            [%- CASE '010' -%]
-                                Book with audio tape
-                            [%- CASE '009' -%]
-                                Book with CD
-                            [%- CASE '008' -%]
-                                Book with diskette
-                            [%- CASE '003' -%]
-                                Bound journal
-                            [%- CASE '006' -%]
-                                CD/CDROM
-                            [% CASE '007' %]
-                                Diskette
-                            [% CASE '002' %]
-                                Magazine
-                            [% CASE '000' %]
-                                Other
-                            [% CASE '005' %]
-                                Video tape
-                            [%- END -%]
-                        [%- END -%]
-                    </MediumType>
+                    <MediumType>[% item.itype %]</MediumType>
                 [%- END -%]
             </BibliographicDescription>
         [% END %]
 
         [% IF element.textContent == 'Circulation Status' %]
-                [%- FILTER collapse -%]
-                    <CirculationStatus>
-                        [%- FILTER trim -%]
                             [% IF item.onloan %]
-                                On Loan
+                                <CirculationStatus>On Loan</CirculationStatus>
                             [% ELSIF item.itemlost %]
-                                Lost
+                                <CirculationStatus>Lost</CirculationStatus>
                             [% ELSIF item.damaged %]
-                                Missing
+                                <CirculationStatus>Missing</CirculationStatus>
                             [% ELSIF item.notforlaon > 0 %]
-                                Not Available
+                               <CirculationStatus>Not Available</CirculationStatus>
                             [% ELSIF item.notforlaon < 0 %]
-                                On Order
+                                <CirculationStatus>On Order</CirculationStatus>
                             [% ELSIF item.hold.found %]
-                                Available For Pickup
+                                <CirculationStatus>Available For Pickup</CirculationStatus>
                             [% ELSIF item.transfers.size %]
-                                In Transit Between Library Locations
+                                <CirculationStatus>In Transit Between Library Locations</CirculationStatus>
                             [% ELSE %]
-                                Checked In
+                                <CirculationStatus>On Shelf</CirculationStatus>
                             [% END %]
-                        [%- END -%]
-                    </CirculationStatus>
-                [%- END -%]
         [% END %]
 
         [% IF element.textContent == 'Hold Queue Length' %]
             <HoldQueueLength>[% item.holds.size %]</HoldQueueLength>
         [% END %]
-
         [% IF element.textContent == 'Item Description' %]
-            <CallNumber>[% item.itemcallnumber %]</CallNumber>
-            <CopyNumber>[% item.itemcopynumber %]</CopyNumber>
+            <ItemDescription>
+            <CallNumber>[% item.itemcallnumber |xml %]</CallNumber>
+            <CopyNumber>[% item.itemcopynumber |xml %]</CopyNumber>
+           </ItemDescription>
         [% END %]
     [% END %]
-</UserOptionalFields>
+<ItemUseRestrictionType Scheme="" />    
+    <Location>
+      <LocationType>Location</LocationType>
+      <LocationName>
+        <LocationNameInstance>
+          <LocationNameLevel>0</LocationNameLevel>
+          <LocationNameValue>[% item.location |xml %]</LocationNameValue>
+        </LocationNameInstance>
+      </LocationName>
+    </Location>
+         <Ext>
+                <Price>[% item.price %]</Price>
+                <PublicationDate>[% item.biblio.copyrightdate |xml %]</PublicationDate>
+                <ItemCategory>[% item.itype %]</ItemCategory>
+        </Ext>        
+  </ItemOptionalFields>
+ [% IF item.onloan %]
+    <ItemTransaction>
+            <CurrentBorrower>
+                <UserId>
+                    <AgencyId>[% branch %]</AgencyId>
+                    <UserIdentifierValue>[% cardnumber %]</UserIdentifierValue>
+                </UserId>
+                <Ext>
+                    <DateDue>[% item.onloan %]T23:59:59</DateDue>
+                </Ext>
+            </CurrentBorrower>
+        </ItemTransaction>
+        [% END %]
+  [% FOREACH resr IN resrs %]
+    <ItemTransaction>
+            <CurrentRequester>
+                <UserId>
+                    <AgencyId>[% item.homebranch %]</AgencyId>
+                    <UserIdentifierValue>[% resr.cardnumber %]</UserIdentifierValue>
+     </UserId>
+</CurrentRequester>
+        </ItemTransaction>
+[% END %]

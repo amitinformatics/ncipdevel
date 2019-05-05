@@ -38,6 +38,29 @@ sub handle {
         );
 
         my $item_data = $item->itemdata();
+        
+        my $dbh = C4::Context->dbh;
+        my $sth = $dbh->prepare(
+            "SELECT * FROM items WHERE barcode = ?
+                ");
+
+        $sth->execute($item_id);
+        my $data_br = $sth->fetchrow_hashref;
+
+         my $sthiss = $dbh->prepare(
+            "select cardnumber as cardnumber from borrowers where borrowernumber in (Select borrowernumber from issues where itemnumber in (select itemnumber from items where barcode = ?))");
+
+        $sthiss->execute($item_id);
+        my $data_iss = $sthiss->fetchrow_hashref;
+
+
+        my $sth_issitems_r = $dbh->prepare("select biblio.title as title, reserves.reservedate as reservedate, reserves.waitingdate as waitingdate, reserves.expirationdate as expirationdate, items.itype as itype,  borrowers.cardnumber as cardnumber from reserves left join biblio on biblio.biblionumber = reserves.biblionumber left join borrowers on borrowers.borrowernumber = reserves.borrowernumber left join items on items.biblionumber = biblio.biblionumber where reserves.itemnumber in (select itemnumber from items where barcode = ?)");
+        $sth_issitems_r->execute($item_id);
+        my @value_r;
+        while (my $data_issitems_r = $sth_issitems_r->fetchrow_hashref) {
+            push @value_r, $data_issitems_r;
+        }
+
 
         if ($item_data) {
             my $elements = $self->get_item_elements($xmldoc);
@@ -46,7 +69,10 @@ sub handle {
                 {
                     message_type => 'LookupItemResponse',
                     item         => $item_data,
+                    cardnumber   => $data_iss->{'cardnumber'},
+                    branch       => $data_br->{'homebranch'},
                     elements     => $elements,
+                    resrs       => \@value_r,
                 }
             );
         }

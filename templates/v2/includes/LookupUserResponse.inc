@@ -8,8 +8,9 @@
         <AgencyId Scheme="">[% user.userdata.branchcode %]</AgencyId>
     </ToAgencyId>
 </ResponseHeader>
-[%- SET format_ValidToDate = config.format_ValidToDate || '%Y-%m-%d' -%]
 <UserId>
+ <AgencyId Scheme="">[% user.userdata.branchcode %]</AgencyId>
+ <UserIdentifierType Scheme="">Barcode</UserIdentifierType>
     [%- SWITCH config.lookup_user_id -%]
     [%- CASE 'same' -%]
 	<UserIdentifierValue>[% user_id | xml %]</UserIdentifierValue>
@@ -48,7 +49,7 @@ RequestedItem
                 <UserAddressRoleType>Home</UserAddressRoleType>
                 <PhysicalAddress>
                     <StructuredAddress>
-                        <Line1>[% FILTER collapse %][% user.userdata.streetnumber | xml %] [% user.userdata.address | xml %][% END %]</Line1>
+                        <Line1>[% user.userdata.streetnumber | xml %] [% user.userdata.address | xml %]</Line1>
 
                         [%- IF user.userdata.address2 -%]
                             <Line2>[% user.userdata.address2 | xml %]</Line2>
@@ -106,38 +107,13 @@ RequestedItem
         [%- END -%]
 
         [%- IF element.textContent == 'User Privilege' -%]
-            <UserPrivilege>
-                <AgencyUserPrivilegeType>LIBRARY</AgencyUserPrivilegeType>
-                <UserPrivilegeStatus>
-                    <UserPrivilegeStatusType>[% user.userdata.branchcode %]</UserPrivilegeStatusType>
-                </UserPrivilegeStatus>
-            </UserPrivilege>
 
             <UserPrivilege>
-                <AgencyUserPrivilegeType>PROFILE</AgencyUserPrivilegeType>
-                <UserPrivilegeStatus>
-                    <UserPrivilegeStatusType>[% user.userdata.categorycode %]</UserPrivilegeStatusType>
-                </UserPrivilegeStatus>
+                <AgencyUserPrivilegeType>[% user.userdata.categorycode %]</AgencyUserPrivilegeType>
+                    <ValidFromDate>[% user.userdata.dateenrolled %]</ValidFromDate>
+                    <ValidToDate>[% user.userdata.dateexpiry %]</ValidToDate>                                    
             </UserPrivilege>
 
-            <UserPrivilege>
-                <AgencyUserPrivilegeType>STATUS</AgencyUserPrivilegeType>
-                <ValidFromDate>[% user.userdata.dateenrolled %]</ValidFromDate>
-                <ValidToDate>[% user.userdata.dateexpiry %]</ValidToDate>              
-                <UserPrivilegeStatus>
-                    [%- FILTER collapse -%]
-                        <UserPrivilegeStatusType>[%- FILTER collapse -%]
-                                [%- IF user.userdata.restricted < 0 -%]
-                                    Delinquent
-                                [%- ELSIF user.userdata.restricted > 0 -%]
-                                    Restricted
-                                [%- ELSE -%]
-                                    Ok
-                                [%- END -%]
-                        [%- END -%]</UserPrivilegeStatusType>
-                    [%- END -%]
-                </UserPrivilegeStatus>
-            </UserPrivilege>
         [%- END -%]
     [%- END -%]
 
@@ -151,9 +127,9 @@ RequestedItem
         <UserPhoto>
         [% user.userdata.image %]
         </UserPhoto>
-    </Ext>
+    </Ext>    
 </UserOptionalFields>
-<UserFiscalAccount>
+ <UserFiscalAccount>
       <AccountBalance>
         <CurrencyCode Scheme="">INR</CurrencyCode>
         <MonetaryValue>[% user.userdata.amount %]</MonetaryValue>
@@ -211,3 +187,5 @@ RequestedItem
    </ItemId>
 </RequestedItem>
 [% END %]
+
+    

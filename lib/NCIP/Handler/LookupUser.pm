@@ -118,6 +118,55 @@ sub handle {
 
         #  this bit should be at a lower level
         my ( $from, $to ) = $self->get_agencies($xmldoc);
+        
+         my $dbh = C4::Context->dbh;
+        
+        my $sth_iss = $dbh->prepare("select * from borrowers where cardnumber = ?");
+        $sth_iss->execute($user_id);
+        my $data_iss = $sth_iss->fetchrow_hashref;
+        
+        my $sth_issitems = $dbh->prepare("select  i.barcode as barcode
+                          , b.title as title
+                          , b.author as author
+                          , t.description as itype
+                          , iss.issuedate as IssuedDate
+                          , date(iss.date_due) as date_due
+                          , 0 as Recalled
+                          , case (iss.date_due < CURRENT_DATE()) 
+                          when true 
+                          then ifnull((SELECT amountoutstanding FROM accountlines al where al.borrowernumber = bo.borrowernumber and al.issue_id = iss.issue_id   order by STR_TO_DATE(SUBSTRING(al.description from LENGTH(al.description) - 16),'%d/%m/%Y %H:%i') desc limit 1), 0)
+                            else 0 end as amountoutstanding
+                          , '' as ReminderLevel
+                          from issues iss
+                             inner join borrowers bo on iss.borrowernumber = bo.borrowernumber
+                             inner join items i on iss.itemnumber = i.itemnumber
+                             inner join biblioitems bi on i.biblioitemnumber = bi.biblioitemnumber
+                             inner join biblio b on bi.biblionumber = b.biblionumber
+                             inner join itemtypes t on t.itemtype = i.itype
+                         where bo.cardnumber = ?");
+        $sth_issitems->execute($user_id);        
+        my @value;
+        while (my $data_issitems = $sth_issitems->fetchrow_hashref) {
+            my $itemnumber = $data_issitems->{'itemnumber'};          
+            push @value, $data_issitems;
+        }  
+        
+        my $sth_issitems_r = $dbh->prepare("select distinct biblio.biblionumber, biblio.title as title, reserves.reservedate as reservedate, reserves.expirationdate as expirationdate, items.itype as itype, items.barcode as barcode, items.homebranch as homebranch from reserves left join biblio on biblio.biblionumber = reserves.biblionumber left join items on items.itemnumber = reserves.itemnumber where reserves.borrowernumber = ?");
+        $sth_issitems_r->execute($data_iss->{'borrowernumber'});        
+        my @value_r;
+        while (my $data_issitems_r = $sth_issitems_r->fetchrow_hashref) {
+            my $itemnumberr = $data_issitems_r->{'itemnumber'};          
+            push @value_r, $data_issitems_r;
+        }  
+        
+        
+        my $sth_issitems_r1 = $dbh->prepare("select biblio.title as title, reserves.reservedate as reservedate, reserves.expirationdate as expirationdate, items.itype as itype, reserves.itemnumber, items.barcode as barcode, items.homebranch as homebranch from reserves left join biblio on biblio.biblionumber = reserves.biblionumber left join items on items.itemnumber = reserves.itemnumber where reserves.borrowernumber = ?");
+        $sth_issitems_r1->execute($data_iss->{'borrowernumber'});        
+        my @value_r1;
+        while (my $data_issitems_r1 = $sth_issitems_r1->fetchrow_hashref) {
+            my $itemnumberr1 = $data_issitems_r1->{'itemnumber'};          
+            push @value_r1, $data_issitems_r1;
+        } 
 
         # we switch these for the templates
         # because we are responding, to becomes from, from becomes to
@@ -136,6 +185,8 @@ sub handle {
                     user         => $user,
                     user_id      => $user_id,
                     config       => $config,
+                    loans        => \@value,
+                    resrs        => \@value_r,#                   
                 }
             );
         }
